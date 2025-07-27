@@ -77,3 +77,216 @@ Simon Oppowa
 
 - GitHub: [@simonoppowa](https://github.com/simonoppowa)
 - Email: [opennutritracker-dev@pm.me](mailto:opennutritracker-dev@pm.me)
+
+# Carrefour Scraper
+
+A Python web scraper for extracting product information from Carrefour websites using Selenium with optimized infinite scroll handling.
+
+## Features
+
+- ✅ **Infinite scroll handling**: Automatically handles lazy-loaded content
+- ✅ **Duplicate prevention**: Tracks product IDs to avoid duplicates
+- ✅ **Optimized scrolling**: Gradual scrolling with smart loading detection
+- ✅ **Cookie management**: Automatically handles cookie consent popups
+- ✅ **Error handling**: Robust error handling with logging
+- ✅ **Async support**: Uses asyncio for better performance
+- ✅ **Show more button**: Automatically clicks "Show more" buttons when available
+
+## Installation
+
+1. **Clone or download the files**:
+   - `carrefour_scraper.py` - Main scraper class
+   - `example_usage.py` - Example usage script
+   - `requirements.txt` - Python dependencies
+
+2. **Set up a virtual environment** (recommended):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Install ChromeDriver**:
+   - Download ChromeDriver from [chromedriver.chromium.org](https://chromedriver.chromium.org/)
+   - Make sure it's in your system PATH or specify the path in your code
+
+## Usage
+
+### Basic Usage
+
+```python
+import asyncio
+from selenium import webdriver
+from carrefour_scraper import CarrefourScraper
+
+# Set up WebDriver
+driver = webdriver.Chrome()
+scraper = CarrefourScraper(driver)
+
+# Define category to scrape
+category = {
+    'name': 'Example Category',
+    'url': 'https://www.carrefour.fr/category-url'
+}
+
+# Scrape products
+products = asyncio.run(scraper.scrape_category(category))
+print(f"Found {len(products)} products")
+
+# Don't forget to close the driver
+driver.quit()
+```
+
+### Using the Example Script
+
+Run the example script to see the scraper in action:
+
+```bash
+python example_usage.py
+```
+
+**Note**: You'll need to update the category URLs in `example_usage.py` with actual Carrefour category pages.
+
+## Configuration
+
+### WebDriver Options
+
+The scraper works best with the following Chrome options:
+
+```python
+from selenium.webdriver.chrome.options import Options
+
+chrome_options = Options()
+chrome_options.add_argument('--headless')  # Run without GUI
+chrome_options.add_argument('--no-sandbox')
+chrome_options.add_argument('--disable-dev-shm-usage')
+chrome_options.add_argument('--disable-gpu')
+chrome_options.add_argument('--window-size=1920,1080')
+
+# Disable images for faster loading
+prefs = {
+    "profile.managed_default_content_settings.images": 2,
+    "profile.managed_default_content_settings.stylesheets": 2
+}
+chrome_options.add_experimental_option("prefs", prefs)
+
+driver = webdriver.Chrome(options=chrome_options)
+```
+
+### Logging
+
+Configure logging to track scraping progress:
+
+```python
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('scraper.log'),
+        logging.StreamHandler()
+    ]
+)
+```
+
+## How It Works
+
+1. **Page Loading**: Loads the category page and handles cookie consent
+2. **Product Detection**: Waits for products to load using CSS selectors
+3. **Scroll Management**: Implements intelligent scrolling with these strategies:
+   - First tries to click "Show more" buttons
+   - Falls back to gradual scrolling to trigger lazy loading
+   - Monitors for new content and stops when no more products load
+4. **Data Extraction**: Extracts product information from each product element
+5. **Duplicate Prevention**: Uses product IDs to avoid processing the same product twice
+
+## Customization
+
+### Product Parsing
+
+You'll need to implement the `_parse_product_element` method based on the specific HTML structure of the Carrefour website:
+
+```python
+def _parse_product_element(self, elem, category: Dict) -> Dict:
+    try:
+        product = {
+            'id': elem.get_attribute('data-pid'),
+            'name': elem.find_element(By.CSS_SELECTOR, '.product-name').text,
+            'price': elem.find_element(By.CSS_SELECTOR, '.price').text,
+            'category': category['name'],
+            'url': category['url']
+        }
+        return product
+    except Exception as e:
+        logger.error(f"Error parsing product: {e}")
+        return None
+```
+
+### CSS Selectors
+
+Update the CSS selectors in the code to match the target website's HTML structure:
+
+- Product containers: `.product[data-pid]`
+- Show more buttons: `button.show-more`, `.show-more-button`, etc.
+- Cookie consent: `button[id*='cookie']`, `.cookie-accept`, etc.
+
+## Error Handling
+
+The scraper includes comprehensive error handling:
+
+- **Network timeouts**: Configurable wait times for page elements
+- **Missing elements**: Graceful handling of missing product information
+- **Scroll detection**: Automatic detection when no more content is available
+- **Driver issues**: Proper cleanup of WebDriver resources
+
+## Legal and Ethical Considerations
+
+⚠️ **Important**: 
+
+- Always check the website's `robots.txt` file and terms of service
+- Respect rate limits and don't overload the server
+- Consider the website's API if available as an alternative
+- Use the scraper responsibly and ethically
+
+## Troubleshooting
+
+### Common Issues
+
+1. **ChromeDriver not found**:
+   - Install ChromeDriver and add it to your PATH
+   - Or specify the path: `webdriver.Chrome('/path/to/chromedriver')`
+
+2. **Products not loading**:
+   - Check if the CSS selectors match the website's HTML
+   - Increase wait times if the site is slow
+   - Verify the category URLs are correct
+
+3. **Infinite scroll not working**:
+   - The website might have changed its structure
+   - Update the scroll detection logic
+   - Check browser console for JavaScript errors
+
+### Debug Mode
+
+Enable debug logging to see detailed information:
+
+```python
+logging.getLogger().setLevel(logging.DEBUG)
+```
+
+## Contributing
+
+Feel free to improve the scraper by:
+- Adding support for more websites
+- Improving error handling
+- Optimizing performance
+- Adding new features
+
+## License
+
+This project is for educational purposes. Make sure to comply with the target website's terms of service and applicable laws.

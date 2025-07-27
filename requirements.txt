@@ -1,0 +1,2 @@
+selenium>=4.0.0
+# Note: asyncio and logging are built-in Python modules, no need to install them
